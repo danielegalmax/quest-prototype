@@ -47,13 +47,21 @@ const navigation = [
 ]
 
 const categories = [
-  { name: 'Musica', icon: '♪', description: 'Suona, ascolta, ripeti', color: '#ccdcff' },
-  { name: 'Benessere', icon: '◌', description: 'Rituali che fanno spazio', color: '#d8ead9' },
-  { name: 'Movimento', icon: '↗', description: 'Un passo alla volta', color: '#ffe0c8' },
-  { name: 'Cucina', icon: '⌁', description: 'Impara facendo', color: '#fff0b8' },
-  { name: 'Lettura', icon: '⌑', description: 'Leggi e trattieni', color: '#e9deff' },
-  { name: 'Creatività', icon: '✦', description: 'Dai forma alle idee', color: '#ffd6dd' },
+  { name: 'Musica', icon: '♪', description: 'Suona, ascolta, ripeti', color: '#7b6cff' },
+  { name: 'Benessere', icon: '◌', description: 'Rituali che fanno spazio', color: '#4dd9ac' },
+  { name: 'Movimento', icon: '↗', description: 'Un passo alla volta', color: '#ffb347' },
+  { name: 'Cucina', icon: '⌁', description: 'Impara facendo', color: '#ff6c6c' },
+  { name: 'Lettura', icon: '⌑', description: 'Leggi e trattieni', color: '#c8ff57' },
+  { name: 'Creatività', icon: '✦', description: 'Dai forma alle idee', color: '#a99fff' },
 ]
+
+const categoryAccent = category => categories.find(item => item.name === category)?.color || '#7b6cff'
+const legacyAccentMap = {
+  '#cfe0ff': '#7b6cff', '#ccdcff': '#7b6cff', '#dbe5ff': '#7b6cff', '#e8ddff': '#c8ff57', '#e9deff': '#c8ff57',
+  '#d8ead9': '#4dd9ac', '#d2ead8': '#ffb347', '#d9ead7': '#ff6c6c', '#ffe0c5': '#4dd9ac', '#ffe0c8': '#ffb347',
+  '#fff0b8': '#ff6c6c', '#ffd6dd': '#a99fff', '#ffd5c5': '#ffb347', '#ffcfbd': '#ff6c6c', '#ffcfd6': '#ff6c6c',
+}
+const themedColor = color => legacyAccentMap[color?.toLowerCase()] || color || '#7b6cff'
 
 const signalTypes = [
   { id: 'fire', label: 'Fiamma', help: 'Stai mantenendo il ritmo', icon: Flame, color: '#ff8b52' },
@@ -103,30 +111,7 @@ function Logo({ compact = false }) {
 }
 
 function Avatar({ initials, color = '#d8e0ff', size = 'md' }) {
-  return <span className={`avatar avatar-${size}`} style={{ background: color }}>{initials}</span>
-}
-
-function ProgressRing({ value = 40, size = 64, stroke = 6, children }) {
-  const radius = (size - stroke) / 2
-  const circumference = radius * 2 * Math.PI
-  return (
-    <span className="progress-ring" style={{ width: size, height: size }}>
-      <svg width={size} height={size} aria-hidden="true">
-        <circle className="ring-track" cx={size / 2} cy={size / 2} r={radius} fill="none" strokeWidth={stroke} />
-        <circle
-          className="ring-value"
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          strokeWidth={stroke}
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference - (value / 100) * circumference}
-        />
-      </svg>
-      <span>{children}</span>
-    </span>
-  )
+  return <span className={`avatar avatar-${size}`} style={{ '--avatar-accent': themedColor(color) }}>{initials}</span>
 }
 
 function Sidebar({ activeView, setActiveView, onCreate, onProfile }) {
@@ -193,7 +178,7 @@ function PageHeader({ eyebrow, title, description, action }) {
 function ActiveQuest({ quest, onUpdate, onCheckIn, onOpenRoom, checkedIn }) {
   const progress = Math.round((quest.day / quest.total) * 100)
   return (
-    <article className="active-quest-mini" style={{ '--quest-color': quest.color }}>
+    <article className="active-quest-mini" style={{ '--quest-color': categoryAccent(quest.category) }}>
       <button className="active-quest-open" onClick={() => onOpenRoom(quest.id)} aria-label={`Apri la stanza ${quest.title}`}>
         <span className="active-quest-category">{quest.category}</span>
         <h3>{quest.title}</h3>
@@ -219,6 +204,11 @@ function ActiveQuestsWidget({ quests, onUpdate, onCheckIn, onOpenRoom, checkedIn
   )
 }
 
+function TimelineDots({ day, total }) {
+  const points = [...new Set([1, Math.max(1, Math.round(day / 2)), day, Math.min(total, Math.round((day + total) / 2)), total])].sort((a, b) => a - b)
+  return <div className="timeline-dots" aria-label={`Progresso: giorno ${day} di ${total}`}>{points.map(point => <span className={`timeline-dot ${point < day ? 'done' : point === day ? 'current' : ''}`} key={point}>{point}</span>)}</div>
+}
+
 function SignalBar({ entry, onSignal, onSendVetta, recipient }) {
   const isCompletion = entry.type === 'completamento'
   return (
@@ -237,9 +227,10 @@ function SignalBar({ entry, onSignal, onSendVetta, recipient }) {
 
 function DayEntry({ entry, onSignal, onSendVetta, recipient, readOnly }) {
   const MediaIcon = entry.media === 'foto' ? Image : entry.media === 'video' ? Video : entry.media === 'documento' ? Paperclip : Mic
+  const signalCount = Object.values(entry.signals || {}).reduce((total, value) => total + value, 0)
   return (
     <div className="day-entry" data-entry-id={entry.id}>
-      <span className={`type-pill ${entry.type.replace(' ', '-')}`}>{entry.type}</span>
+      <div className="day-entry-meta"><span className={`type-pill ${entry.type.replace(' ', '-')}`}>{entry.type}</span><span className="signal-total"><Sparkles size={13} /> {signalCount} segnali ricevuti</span></div>
       <p>{entry.text}</p>
       {entry.tags && <div className="tag-list">{entry.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}
       {entry.media === 'audio' && <div className="audio-card"><button aria-label="Riproduci nota audio">▶</button><span className="audio-wave">▂▄▆▃▇▅▂▆▄▃▇▅▂▆▄▃▇▅▂</span><small>0:24</small></div>}
@@ -254,13 +245,14 @@ function DayBlockCard({ block, onSignal, onSendVetta, readOnly = false, mode = '
   const additionalCount = block.entries.length - 1
   const visibleEntries = expanded ? block.entries : block.entries.slice(0, 1)
   return (
-    <article className={`day-block-card ${expanded ? 'expanded' : ''} ${readOnly ? 'read-only' : ''} ${mode === 'viewer' ? 'viewer-block' : ''}`} data-day-block-id={block.id}>
+    <article className={`day-block-card ${expanded ? 'expanded' : ''} ${readOnly ? 'read-only' : ''} ${mode === 'viewer' ? 'viewer-block' : ''}`} style={{ '--card-accent': categoryAccent(block.category) }} data-day-block-id={block.id}>
       <button className="day-block-header" onClick={() => setExpanded(value => !value)} aria-expanded={expanded}>
         <Avatar initials={block.initials} color={block.color} />
         <span className="day-block-person"><strong>{block.person}</strong><small>Giorno {block.day} di {block.total} · {block.dateLabel}</small></span>
         {!expanded && additionalCount > 0 && <span className="entry-count">+ {additionalCount} {additionalCount === 1 ? 'altro aggiornamento' : 'altri aggiornamenti'} oggi</span>}
         <ChevronDown className="day-block-chevron" size={18} />
       </button>
+      <TimelineDots day={block.day} total={block.total} />
       <div className="day-block-entries">
         {visibleEntries.map(entry => <DayEntry key={entry.id} entry={entry} onSignal={onSignal} onSendVetta={onSendVetta} recipient={block.person} readOnly={readOnly} />)}
       </div>
@@ -369,7 +361,7 @@ function RoomView({ questId, roomId, mode = 'member', availableQuests, onUpdate,
         action={mode === 'viewer' ? <button className="button primary" onClick={() => onCreateForCategory(room.category)}><Plus size={17} /> Inizia il tuo percorso in questa categoria</button> : memberActions}
       />
       <section className="room-overview">
-        <div className="room-progress"><ProgressRing value={progress}><strong>{room.day}</strong></ProgressRing><div><span>{mode === 'viewer' ? 'Fase della stanza' : 'Il tuo percorso'}</span><strong>{room.day} giorni su {room.total}</strong><small>{mode === 'viewer' ? room.startedLabel : `Prossimo punto: ${room.nextStep}`}</small></div></div>
+        <div className="room-progress"><div className="room-progress-marker"><strong>{progress}%</strong><TimelineDots day={room.day} total={room.total} /></div><div><span>{mode === 'viewer' ? 'Fase della stanza' : 'Il tuo percorso'}</span><strong>{room.day} giorni su {room.total}</strong><small>{mode === 'viewer' ? room.startedLabel : `Prossimo punto: ${room.nextStep}`}</small></div></div>
         <div className="room-stat"><span>Persone attive</span><strong>{room.members}</strong><small>{roomBlocks.length} hanno aggiornato di recente</small></div>
         <div className="room-stat"><span>Ritmo della stanza</span><strong>1,6 gg</strong><small>tra un passo e l’altro</small></div>
         <div className="room-people">{roomBlocks.slice(0, 4).map(block => <Avatar key={block.id} initials={block.initials} color={block.color} />)}<span>+{Math.max(1, room.members - roomBlocks.length)}</span></div>
@@ -404,7 +396,7 @@ function DiscoverView({ onCreate, onOpenRecipe, onOpenProduct, onOpenRoom }) {
           <div className="section-heading"><div><span className="eyebrow">RISULTATI PER “{query.toUpperCase()}”</span><h2>{results.length ? `${results.length} percorsi trovati` : 'Nessun percorso trovato'}</h2></div></div>
           {results.length > 0 ? <div className="search-result-list">{results.map(item => (
             <button key={item.id} onClick={() => item.hasPublishedListing ? onOpenProduct(item) : onOpenRecipe(item)}>
-              <span className="result-icon" style={{ background: item.color }}>{item.hasPublishedListing ? <BookOpen size={18} /> : <Library size={18} />}</span>
+              <span className="result-icon" style={{ '--item-accent': categoryAccent(item.category) }}>{item.hasPublishedListing ? <BookOpen size={18} /> : <Library size={18} />}</span>
               <span><small>{item.kind} · {item.category}</small><strong>{item.title}</strong><em>{item.hasPublishedListing ? `${item.listing.coach} · da €${item.listing.price}` : `${item.success} di completamento · ${item.duration}`}</em></span>
               <ArrowRight size={18} />
             </button>
@@ -432,7 +424,7 @@ function DiscoverView({ onCreate, onOpenRecipe, onOpenProduct, onOpenRoom }) {
 function RecipeCard({ recipe, onOpen }) {
   return (
     <article className="recipe-card" onClick={() => onOpen(recipe)}>
-      <button className="recipe-cover" style={{ background: recipe.color }} aria-label={`Apri ${recipe.title}`}>
+      <button className="recipe-cover" style={{ '--item-accent': categoryAccent(recipe.category) }} aria-label={`Apri ${recipe.title}`}>
         <span className="cover-category">{recipe.category}</span>
         <div className="mini-path">{recipe.path.map((step, i) => <span key={step} className={i < 3 ? 'done' : ''}><i />{step}</span>)}</div>
       </button>
@@ -465,7 +457,7 @@ function ProductCard({ product, onOpen }) {
   const listing = product.listing
   return (
     <article className="product-card">
-      <button className="product-art" style={{ background: product.color }} onClick={() => onOpen(product)}>
+      <button className="product-art" style={{ '--item-accent': categoryAccent(product.category) }} onClick={() => onOpen(product)}>
         <span className="product-type">{listingTypeLabel(listing)}</span>
         <span className="product-glyph">{listing.type === 'risorsa' ? '⌑' : listing.type === 'consulenza' ? '◎' : product.category === 'Musica' ? '♪' : '↗'}</span>
         <span className="product-level">{listing.level}</span>
@@ -515,7 +507,7 @@ function ProfileView({ quests, onOpenQuest }) {
         <div className="path-status-filters">{Object.entries(statusLabels).map(([status, label]) => <button className={statusFilter === status ? 'active' : ''} onClick={() => setStatusFilter(status)} key={status}>{label}<span>{quests.filter(quest => quest.status === status).length}</span></button>)}</div>
         <div className="profile-path-list">{filteredQuests.map(quest => {
           const progress = Math.round((quest.day / quest.total) * 100)
-          return <button className="profile-path-row" onClick={() => onOpenQuest(quest.id)} key={quest.id}><span className="profile-quest-icon" style={{ background: quest.color }}>{quest.origin === 'acquisto_marketplace' ? <ShoppingBag size={19} /> : quest.status === 'completed' ? <Trophy size={19} /> : <Target size={19} />}</span><span className="profile-path-copy"><small>{quest.category} · {statusLabels[quest.status]}</small><strong>{quest.title}</strong><em>{quest.reference || `Giorno ${quest.day} di ${quest.total} · ${quest.nextStep}`}</em><span className="linear-progress"><span style={{ width: `${progress}%` }} /></span></span><span className="profile-path-progress">{progress}%</span><ArrowRight size={18} /></button>
+          return <button className="profile-path-row" style={{ '--item-accent': categoryAccent(quest.category) }} onClick={() => onOpenQuest(quest.id)} key={quest.id}><span className="profile-quest-icon">{quest.origin === 'acquisto_marketplace' ? <ShoppingBag size={19} /> : quest.status === 'completed' ? <Trophy size={19} /> : <Target size={19} />}</span><span className="profile-path-copy"><small>{quest.category} · {statusLabels[quest.status]}</small><strong>{quest.title}</strong><em>{quest.reference || `Giorno ${quest.day} di ${quest.total} · ${quest.nextStep}`}</em><span className="linear-progress"><span style={{ width: `${progress}%` }} /></span></span><span className="profile-path-progress">{progress}%</span><ArrowRight size={18} /></button>
         })}</div>
       </section>
     </main>
@@ -586,15 +578,15 @@ function RecipePage({ recipe, onBack, onGenerate, onViewMarket, showToast }) {
   const totalDays = Number.parseInt(recipe.duration, 10)
   const authorInitials = recipe.author.split(' ').map(part => part[0]).join('').slice(0, 2)
   const timelineBlocks = [
-    { id: `recipe-${recipe.id}-start`, person: recipe.author, initials: authorInitials, color: recipe.color, day: 1, total: totalDays, dateLabel: 'inizio', entries: [{ id: `recipe-${recipe.id}-start-entry`, type: 'aggiornamento', text: `Il punto di partenza: ${recipe.path[0]}. Obiettivo dichiarato e primo tentativo documentato.`, signals: { fire: 0, brick: 0, map: 0, zap: 0 } }] },
-    ...criticalBlocks.map((block, index) => ({ id: `recipe-${recipe.id}-block-${index}`, person: recipe.author, initials: authorInitials, color: recipe.color, day: block.day, total: totalDays, dateLabel: 'blocco superato', entries: [{ id: `recipe-${recipe.id}-block-entry-${index}`, type: 'blocco', text: `${block.title}. ${block.text}`, signals: { fire: 0, brick: 0, map: 0, zap: 0 } }] })),
-    { id: `recipe-${recipe.id}-finish`, person: recipe.author, initials: authorInitials, color: recipe.color, day: totalDays, total: totalDays, dateLabel: 'percorso concluso', entries: [{ id: `recipe-${recipe.id}-finish-entry`, type: 'completamento', text: `Percorso completato: ${recipe.path[recipe.path.length - 1]}. La documentazione è diventata questa ricetta.`, signals: { fire: 0, brick: 0, map: 0, zap: 0, vetta: 0 } }] },
+    { id: `recipe-${recipe.id}-start`, person: recipe.author, category: recipe.category, initials: authorInitials, color: recipe.color, day: 1, total: totalDays, dateLabel: 'inizio', entries: [{ id: `recipe-${recipe.id}-start-entry`, type: 'aggiornamento', text: `Il punto di partenza: ${recipe.path[0]}. Obiettivo dichiarato e primo tentativo documentato.`, signals: { fire: 0, brick: 0, map: 0, zap: 0 } }] },
+    ...criticalBlocks.map((block, index) => ({ id: `recipe-${recipe.id}-block-${index}`, person: recipe.author, category: recipe.category, initials: authorInitials, color: recipe.color, day: block.day, total: totalDays, dateLabel: 'blocco superato', entries: [{ id: `recipe-${recipe.id}-block-entry-${index}`, type: 'blocco', text: `${block.title}. ${block.text}`, signals: { fire: 0, brick: 0, map: 0, zap: 0 } }] })),
+    { id: `recipe-${recipe.id}-finish`, person: recipe.author, category: recipe.category, initials: authorInitials, color: recipe.color, day: totalDays, total: totalDays, dateLabel: 'percorso concluso', entries: [{ id: `recipe-${recipe.id}-finish-entry`, type: 'completamento', text: `Percorso completato: ${recipe.path[recipe.path.length - 1]}. La documentazione è diventata questa ricetta.`, signals: { fire: 0, brick: 0, map: 0, zap: 0, vetta: 0 } }] },
   ]
   return (
     <main className="content-page detail-page recipe-detail-page">
       <nav className="detail-breadcrumb" aria-label="Breadcrumb"><button onClick={onBack}>Ricette</button><ChevronRight size={14} /><span>{recipe.category}</span><ChevronRight size={14} /><strong>{recipe.title}</strong></nav>
       <header className="detail-page-header"><div><span className="eyebrow">RICETTA DI {recipe.author.toUpperCase()}</span><h1>{recipe.title}</h1><p>Una timeline reale, clonabile gratuitamente e senza promesse di perfezione.</p></div><button className="button secondary" onClick={onBack}><ArrowLeft size={17} /> Indietro</button></header>
-      <div className="detail-hero" style={{ background: recipe.color }}><div className="detail-path">{recipe.path.map((step, i) => <span key={step}><i>{i + 1}</i>{step}</span>)}</div></div>
+      <div className="detail-hero" style={{ '--item-accent': categoryAccent(recipe.category) }}><div className="detail-path">{recipe.path.map((step, i) => <span key={step}><i>{i + 1}</i>{step}</span>)}</div></div>
       <div className="recipe-proof-grid"><div><strong>{details.active}</strong><span>giorni attivi</span></div><div><strong>{details.streak}</strong><span>streak massima</span></div><div><strong>{recipe.success}</strong><span>arriva in fondo</span></div><div><strong>{recipe.clones}</strong><span>clonazioni</span></div></div>
       <div className="recipe-document">
         <section><span className="eyebrow">SOMMARIO DEL PERCORSO</span><h3>La strada, compresi i punti in cui si è fermata.</h3><p>Questa ricetta non promette un metodo perfetto: mostra {recipe.duration} di pratica reale, 2 blocchi documentati e il cambio di rotta che ha reso possibile arrivare in fondo.</p><div className="story-points">{recipe.path.map((point, index) => <span key={point}><i>0{index + 1}</i>{point}</span>)}</div></section>

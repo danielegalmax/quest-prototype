@@ -1,12 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import '@fontsource/dm-sans/400.css'
-import '@fontsource/dm-sans/500.css'
-import '@fontsource/dm-sans/600.css'
-import '@fontsource/syne/600.css'
-import '@fontsource/syne/700.css'
-import '@fontsource/ibm-plex-mono/500.css'
 import './styles.css'
 import App from './App'
 
