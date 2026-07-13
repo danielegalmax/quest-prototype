@@ -1,5 +1,7 @@
 # Quest — prototipo web
 
+[Demo live su Vercel](https://sito-codex-kappa.vercel.app) · [Repository GitHub](https://github.com/danielegalmax/quest-prototype)
+
 Interfaccia web responsive costruita a partire dalla documentazione in `../Documentazione`.
 
 ## Avvio locale
@@ -29,5 +31,9 @@ La build ottimizzata viene generata nella cartella `dist`.
 - Profilo con storico trasparente di traguardi, pause e cambi di rotta
 - Onboarding guidato che mostra la stanza prima dell'ingresso e accompagna il Giorno 1
 - Flussi interattivi per aggiornamenti, segnali, nuova Quest, clonazione e acquisto
+- Un solo modello dati condiviso tra Ricette e Marketplace, con collegamenti incrociati
+- Timeline a blocchi Giorno X riusata nelle stanze e nelle ricette
+- Segnale Vetta gratuito, disponibile esclusivamente sui completamenti
+- Quest acquistate visibili nel Profilo con la provenienza dal Marketplace
 
 Il progetto è un prototipo frontend con dati dimostrativi locali. Autenticazione, persistenza, upload e pagamenti richiedono il collegamento a Supabase e Stripe indicato nella documentazione tecnica.
